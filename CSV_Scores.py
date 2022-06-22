@@ -22,7 +22,7 @@ def sort_file(user):
     obj = file
     obj[user.Record] = {user.Name: user.Record}
     sorted_tuple = sorted(file.items(), key=lambda x: int(x[0]))
-    obj = sorted_tuple
+    obj = dict(sorted_tuple)
     return obj
 
 
