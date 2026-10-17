@@ -2,6 +2,9 @@ name: Build Windows EXE
 
 on:
   workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
 
 permissions:
   contents: read
@@ -28,3 +31,23 @@ jobs:
           if-no-files-found: error
           compression-level: 0
           retention-days: 30
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: windows
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: GhostOfSpace-Windows-x64
+      - name: Publish Windows download
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: >-
+          gh release create "$RELEASE_TAG" GhostOfSpace.exe
+          --verify-tag --title "Ghost of Space $RELEASE_TAG"
+          --notes "Windows x64: download GhostOfSpace.exe and launch it. Python is not required."
