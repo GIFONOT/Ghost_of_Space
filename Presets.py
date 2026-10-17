@@ -1,88 +1,75 @@
-from os import path
+from functools import lru_cache
 import pygame
+from Setting import W, H
+from Paths import ROOT
+
+img_dir = str(ROOT / 'Png')
+pygame.font.init()
+try:
+    pygame.mixer.init()
+except pygame.error:
+    pass
 
 
-pygame.mixer.init()
+@lru_cache(maxsize=None)
+def image(name):
+    loaded = pygame.image.load(str(ROOT / 'Png' / name))
+    return loaded if name == 'background-nebula.png' else loaded.subsurface(loaded.get_bounding_rect()).copy()
 
 
-# загрузка файлов
-img_dir = path.join(path.dirname(__file__), 'Png')
-sound_dir = path.join(path.dirname(__file__), 'Sound')
+@lru_cache(maxsize=8)
+def pixel_sprite(name, width, grid=32):
+    source = image(name)
+    source = source.subsurface(source.get_bounding_rect(min_alpha=128))
+    height = max(1, round(source.get_height() * grid / source.get_width()))
+    pixels = pygame.transform.scale(source, (grid, height))
+    return pygame.transform.scale(pixels, (width, max(1, round(width * height / grid))))
 
-# текстуры
-background = pygame.image.load(path.join(img_dir, 'BackGround.png'))
-background = pygame.transform.scale(background, (750, 950))
+
+class Sound:
+    def __init__(self, name, volume=0.2):
+        self.volume = volume
+        self.sound = pygame.mixer.Sound(str(ROOT / 'Sound' / name)) if pygame.mixer.get_init() else None
+
+    def play(self):
+        if self.sound:
+            self.sound.play()
+
+    def stop(self):
+        if self.sound:
+            self.sound.stop()
+
+    def set_volume(self, volume):
+        if self.sound:
+            self.sound.set_volume(volume * self.volume)
+
+
+background = pygame.transform.scale(image('background-nebula.png'), (W, H))
 background_rect = background.get_rect()
-
-powerup_img = {}
-powerup_img['HP'] = pygame.image.load(path.join(img_dir, 'HP.png'))
-#powerup_img['HP'] = pygame.transform.scale(powerup_img['HP'], (70, 70))
-
-powerup_img['LifeSteal'] = pygame.image.load(path.join(img_dir, 'Vampir.png'))
-powerup_img['LifeSteal'] = pygame.transform.scale(powerup_img['LifeSteal'], (30, 30))
-
-powerup_img['MaxHp'] = pygame.image.load(path.join(img_dir, 'Max_HP.png'))
-powerup_img['MaxHp'] = pygame.transform.scale(powerup_img['MaxHp'], (30, 30))
-
-powerup_img['Damage'] = pygame.image.load(path.join(img_dir, 'Damage.png'))
-powerup_img['Damage'] = pygame.transform.scale(powerup_img['Damage'], (30, 30))
-
-powerup_img['AtakSpeade'] = pygame.image.load(path.join(img_dir, 'AtakSpeade.png'))
-powerup_img['AtakSpeade'] = pygame.transform.scale(powerup_img['AtakSpeade'], (30, 30))
-
-powerup_img['speade'] = pygame.image.load(path.join(img_dir, 'speade.png'))
-powerup_img['speade'] = pygame.transform.scale(powerup_img['speade'], (30, 30))
-
-leg_powerup_img = {}
-leg_powerup_img['KolBullet'] = pygame.image.load(path.join(img_dir, 'leg2.png'))
+skin_img = [image(name) for name in ('somm.png', 'somm2.png', 'somm3.png', 'somm4.png', 'somm5.png', 'somm6.png')]
+skin_img += [pixel_sprite(name, 96) for name in ('ship-kestrel.png', 'ship-bastion.png')]
+powerup_img = {key: pygame.transform.scale(image(filename), (30, 30)) for key, filename in {
+    'HP': 'HP.png', 'MaxHp': 'Max_HP.png', 'LifeSteal': 'Vampir.png',
+    'Damage': 'Damage.png', 'AtakSpeade': 'AtakSpeade.png', 'speade': 'speade.png',
+}.items()}
+leg_powerup_img = {'KolBullet': image('leg2.png')}
+exp_img = {'Mob_Boom': [], 'G': []}
+shoot_sound = Sound('pew.mp3', 0.12)
+boom_sound = Sound('expl6.wav')
+boomPlaer_sound = Sound('expl3.wav')
+dead = Sound('Dark souls - You Died_(EEMUSIC.ru).mp3', 0.12)
+bonus = Sound('sfx_shieldUp.ogg', 0.4)
+exp_sound = Sound('rumble1.ogg')
+Click = Sound('click_001.ogg')
+puk = Sound('cartoon-bubble-pop-01-.mp3', 0.1)
+menu_svap = Sound('sfx_keypress.wav')
+sounds = [shoot_sound, boom_sound, boomPlaer_sound, dead, bonus, exp_sound, Click, puk, menu_svap]
+if pygame.mixer.get_init():
+    pygame.mixer.music.load(str(ROOT / 'Sound' / 'ost_fighter.ogg'))
 
 
-
-
-exp_img = {}
-exp_img['Mob_Boom'] = []
-exp_img['G'] = []
-i = 0
-g = 0
-
-skin_img = []
-skin_img.append(pygame.image.load(path.join(img_dir, 'somm.png')))
-skin_img.append(pygame.image.load(path.join(img_dir, 'somm2.png')))
-skin_img.append(pygame.image.load(path.join(img_dir, 'somm3.png')))
-skin_img.append(pygame.image.load(path.join(img_dir, 'somm4.png')))
-skin_img.append(pygame.image.load(path.join(img_dir, 'somm5.png')))
-skin_img.append(pygame.image.load(path.join(img_dir, 'somm6.png')))
-
-
-
-
-# звуки
-shoot_sound = pygame.mixer.Sound(path.join(sound_dir, 'pew.mp3'))
-pygame.mixer.Sound.set_volume(shoot_sound, 0.1)
-
-boom_sound = pygame.mixer.Sound(path.join(sound_dir, 'expl6.wav'))
-pygame.mixer.Sound.set_volume(boom_sound, 0.1)
-
-boomPlaer_sound = pygame.mixer.Sound(path.join(sound_dir, 'expl3.wav'))
-pygame.mixer.Sound.set_volume(boomPlaer_sound, 0.1)
-
-dead = pygame.mixer.Sound(path.join(sound_dir, 'Dark souls - You Died_(EEMUSIC.ru).mp3'))
-pygame.mixer.Sound.set_volume(dead, 0.09)
-
-bonus = pygame.mixer.Sound(path.join(sound_dir, 'sfx_shieldUp.ogg'))
-pygame.mixer.Sound.set_volume(bonus, 1)
-
-exp_sound = pygame.mixer.Sound(path.join(sound_dir, 'rumble1.ogg'))
-pygame.mixer.Sound.set_volume(exp_sound, 0.1)
-
-pygame.mixer.music.load(path.join(sound_dir, 'ost_fighter.ogg'))
-#pygame.mixer.Sound.set_volume(music, 0.01)
-
-
-
-Click = pygame.mixer.Sound(path.join(sound_dir, 'click_001.ogg'))
-#pygame.mixer.Sound.set_volume(music, 0.06)
-
-puk = pygame.mixer.Sound(path.join(sound_dir, 'cartoon-bubble-pop-01-.mp3'))
-
-menu_svap = pygame.mixer.Sound(path.join(sound_dir, 'sfx_keypress.wav'))
+def set_audio(music, effects):
+    if pygame.mixer.get_init():
+        pygame.mixer.music.set_volume(music)
+    for sound in sounds:
+        sound.set_volume(effects)

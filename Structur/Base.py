@@ -1,15 +1,14 @@
 import pygame
-import main
-from Setting import W
+from Setting import W, H
 
 
 class Base(pygame.sprite.Sprite):
     def __init__(self):
-        pygame.sprite.Sprite.__init__(self)
+        super().__init__()
         self.image = pygame.Surface((W, 5))
-        self.rect = self.image.get_rect()
-        self.image.fill((255, 0, 0))
-        self.rect.center = (main.W/2, main.H+20)
+        self.image.fill((85, 205, 190))
+        self.rect = self.image.get_rect(midbottom=(W / 2, H))
+        self.Hp_base = self.Max_Hp_base = 100
 
-        self.Hp_base = 100
-        self.Max_Hp_base = 100
+    def repair(self, amount):
+        self.Hp_base = min(self.Max_Hp_base, self.Hp_base + amount)
