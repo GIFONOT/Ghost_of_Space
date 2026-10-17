@@ -32,6 +32,13 @@ py -3 -m venv .venv
 
 Результат: `dist\GhostOfSpace.exe`. Передавайте именно этот файл.
 
+Если Windows под рукой нет, в репозитории подготовлен GitHub Actions workflow
+`.github/workflows/build-windows.yml`. После загрузки актуального кода в GitHub
+откройте **Actions → Build Windows EXE → Run workflow**. Дождитесь успешного
+завершения и скачайте **Artifacts → GhostOfSpace-Windows-x64**. В ZIP будет
+один `GhostOfSpace.exe` Артефакт хранится
+30 дней; сборка запускается только вручную.
+
 macOS, Terminal из папки проекта:
 
 ```sh
